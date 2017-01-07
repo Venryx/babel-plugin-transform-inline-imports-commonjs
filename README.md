@@ -82,6 +82,14 @@ The same settings that are available for [`babel-plugin-transform-es2015-modules
   import foo from 'bar'; // transforms to inline import
   ```
 
+* `includeModules`:
+  - An array of strings that correspond to module IDs that **should** be "inline-import"'ed. If used, the `excludeModules` option will be ignored, and modules will only be inline-imported if they're in this list. For the config `"includeModules": ["atom"]`:
+
+  ```js
+  import {TextEditor} from 'atom'; // transforms to inline import
+  import foo from 'bar';  // transforms to plain `require` with interop
+  ```
+
 * `excludeNodeBuiltins` (default: `false`)
   - Do not apply "inline-imports" to [Node builtin modules](https://github.com/sindresorhus/builtin-modules/blob/v1.1.1/builtin-modules.json). These modules are usually already in the module cache, so there may be no need to lazily load them.
 
@@ -89,3 +97,8 @@ The same settings that are available for [`babel-plugin-transform-es2015-modules
   import * as path from 'path'; // transforms to plain `require` with interop
   import foo from 'bar'; // transforms to inline import
   ```
+
+* `moduleMatchType` (default: `"exact"`, options: `["exact", "ends with"]`)
+  - How to compare the `import`/`require` calls' sources (the string argument) with the include/exclude list values.
+  
+  - Example: Switch to `"ends with"`, and set the include or exclude list to `["/node_modules/atom"]`, if you want the plugin to work for relative imports like `require("../node_modules/atom")`.

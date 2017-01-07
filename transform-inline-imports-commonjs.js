@@ -185,9 +185,32 @@ module.exports = context => {
           const excludeNodeBuiltins = this.opts.excludeNodeBuiltins
             ? builtinModules
             : null;
+          const includeModules = Array.isArray(this.opts.includeModules)
+            ? new Set(this.opts.includeModules)
+            : null;
           const excludeModules = Array.isArray(this.opts.excludeModules)
             ? new Set(this.opts.excludeModules)
             : null;
+
+          const moduleMatchType = this.opts.moduleMatchType || "exact";
+          function strEndsWith(str, endStr) {
+            return str.indexOf(endStr, str.length - endStr.length) != -1;
+          }
+          const shouldIncludeModuleInline = source=> {
+            if (excludeNodeBuiltins && excludeNodeBuiltins.has(source))
+                return false;
+
+            if (moduleMatchType == "exact") {
+              if (includeModules)
+                return includeModules.has(source);
+              return excludeModules == null || !excludeModules.has(source);
+            } else if (moduleMatchType == "ends with") {
+              if (includeModules)
+                return this.opts.includeModules.some(mod=>strEndsWith(source, mod));
+              return excludeModules == null ||
+                !this.opts.excludeModules.some(mod=>strEndsWith(source, mod));
+            }
+          }
 
           const addRequire = (source, blockHoist, interop) => {
             const cacheKey = JSON.stringify({source, interop});
@@ -203,10 +226,7 @@ module.exports = context => {
               ? t.callExpression(this.addHelper(interop), [requireCallExpression])
               : requireCallExpression;
 
-            if (
-              (excludeNodeBuiltins && excludeNodeBuiltins.has(source)) ||
-              (excludeModules && excludeModules.has(source))
-            ) {
+            if (!shouldIncludeModuleInline(source)) {
               // var memoizedID;
               const declID = path.scope.generateUidIdentifier(source);
               const varDecl = t.variableDeclaration('var', [
